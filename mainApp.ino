@@ -29,6 +29,8 @@ int waterLevel = 0;
 
 void setup() {
   
+  Serial.begin(9600);
+  
   pinMode(btnPause, INPUT);
   pinMode(btnAutoManual, INPUT);
   pinMode(btnSemiAuto, INPUT);
@@ -67,6 +69,15 @@ void setWaterLevel() {
   int medium = digitalRead(waterLevelSensorMedium);
   int high = digitalRead(waterLevelSensorHigh);
   
+  Serial.print("Low Sensor Value: ");
+  Serial.println(low);
+  
+  Serial.print("Medium Sensor Value: ");
+  Serial.println(medium);
+  
+  Serial.print("High Sensor Value: ");
+  Serial.println(high);
+  
   if (low == HIGH && medium == HIGH && high == HIGH) {
   	waterLevel = 3;
   } else if (low == HIGH && medium == HIGH && high == LOW) {
@@ -81,6 +92,9 @@ void setWaterLevel() {
 }
 
 void handleWaterLevelLed() {
+  
+  Serial.println("Water Level: ");
+  Serial.println(waterLevel);
     
   if (waterLevel == 1) {
     
@@ -106,6 +120,15 @@ void handleWaterLevelLed() {
     digitalWrite(ledWaterLevelMedium, LOW);
     digitalWrite(ledWaterLevelLow, LOW);
   }
+  
+  Serial.println("Low Led: ");
+  Serial.println(ledWaterLevelLow);
+  
+  Serial.print("Medium Led: ");
+  Serial.println(ledWaterLevelMedium);
+  
+  Serial.print("High Led: ");
+  Serial.println(ledWaterLevelHigh);
 }
 
 void setAutoStatus() {
