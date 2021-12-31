@@ -78,13 +78,13 @@ void setWaterLevel() {
   Serial.print("High Sensor Value: ");
   Serial.println(high);
   
-  if (low == HIGH && medium == HIGH && high == HIGH) {
+  if (low == LOW && medium == LOW && high == LOW) {
   	waterLevel = 3;
-  } else if (low == HIGH && medium == HIGH && high == LOW) {
+  } else if (low == LOW && medium == LOW && high == HIGH) {
   	waterLevel = 2;
-  } else if (low == HIGH && medium == LOW && high == LOW) {
+  } else if (low == LOW && medium == HIGH && high == HIGH) {
   	waterLevel = 1;
-  } else if (low == LOW && medium == LOW && high == LOW) {
+  } else if (low == HIGH && medium == HIGH && high == HIGH) {
   	waterLevel = 0;
   } else {
   	waterLevel = -1;
