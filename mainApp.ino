@@ -1,10 +1,23 @@
+const unsigned long debounceDelay = 50;
+
 const int waterLevelSensorLow = 0;
 const int waterLevelSensorMedium = 1;
 const int waterLevelSensorHigh = 2;
 
 const int btnPause = 3;
+int btnPauseState;
+int lastBtnPauseState = LOW;
+unsigned long lastBtnPauseDebounceTime = 0;
+
 const int btnAutoManual = 4;
+int btnAutoManualState;
+int lastBtnAutoManualState = LOW;
+unsigned long lastBtnAutoManualDebounceTime = 0;
+
 const int btnSemiAuto =5;
+int btnSemiAutoState;
+int lastSemiAutoState = LOW;
+unsigned long lastBtnSemiAutoDebounceTime = 0;
 
 const int ledWaterLevelLow = 6;
 const int ledWaterLevelMedium = 7;
@@ -50,17 +63,13 @@ void setup() {
 
 void loop() {
   
+  updateWaterLevel();
+  updateButtonStatuses();
+}
+
+void updateWaterLevel() {
   setWaterLevel();
   handleWaterLevelLed();
-  
-  setAutoStatus();
-  handleAutoManualLeds();
-  
-  setPauseStatus();
-  handlePauseLed();
-  
-  setSemiAutoStatus();
-  handleSemiAutoLed();
 }
 
 void setWaterLevel() {
@@ -68,15 +77,6 @@ void setWaterLevel() {
   int low = digitalRead(waterLevelSensorLow);
   int medium = digitalRead(waterLevelSensorMedium);
   int high = digitalRead(waterLevelSensorHigh);
-  
-  Serial.print("Low Sensor Value: ");
-  Serial.println(low);
-  
-  Serial.print("Medium Sensor Value: ");
-  Serial.println(medium);
-  
-  Serial.print("High Sensor Value: ");
-  Serial.println(high);
   
   if (low == LOW && medium == LOW && high == LOW) {
   	waterLevel = 3;
@@ -92,9 +92,6 @@ void setWaterLevel() {
 }
 
 void handleWaterLevelLed() {
-  
-  Serial.println("Water Level: ");
-  Serial.println(waterLevel);
     
   if (waterLevel == 1) {
     
@@ -120,27 +117,36 @@ void handleWaterLevelLed() {
     digitalWrite(ledWaterLevelMedium, LOW);
     digitalWrite(ledWaterLevelLow, LOW);
   }
+}
+
+void updateButtonStatuses() {
+  setAutoStatus();
+  setPauseStatus();
+  setSemiAutoStatus();
   
-  Serial.println("Low Led: ");
-  Serial.println(ledWaterLevelLow);
-  
-  Serial.print("Medium Led: ");
-  Serial.println(ledWaterLevelMedium);
-  
-  Serial.print("High Led: ");
-  Serial.println(ledWaterLevelHigh);
+  handleAutoManualLeds();
+  handlePauseLed();
+  handleSemiAutoLed();
 }
 
 void setAutoStatus() {
- 
-  int autoButtonStatus = digitalRead(btnAutoManual);
   
-  if (autoButtonStatus == HIGH) {
-    
-    isAuto = !isAuto;
-    handleAutoManualLeds();
-    delay(100);
+  int reading = digitalRead(btnAutoManual);
+  
+  if (reading != lastBtnAutoManualState) {
+    lastBtnAutoManualDebounceTime = millis();
   }
+  
+  if ((millis() - lastBtnAutoManualDebounceTime) > debounceDelay) {
+    if (reading != btnAutoManualState) {
+      btnAutoManualState = reading;
+
+      if (btnAutoManualState == HIGH) {
+        isAuto = !isAuto;
+      }
+    }
+  }
+  lastBtnAutoManualState = reading;
 }
 
 void handleAutoManualLeds() {
@@ -188,18 +194,24 @@ void handlePauseLed() {
 
 void setSemiAutoStatus() {
   
-  int semiAutoButtonStatus = digitalRead(btnSemiAuto);
+  int reading = digitalRead(btnSemiAuto);
   
-  if (semiAutoButtonStatus == HIGH) {
-    
-    isSemiAuto = !isSemiAuto;
-    handleSemiAutoLed();
-    delay(100);
+  if (reading != lastSemiAutoState) {
+    lastBtnSemiAutoDebounceTime = millis();
   }
+  
+  if ((millis() - lastBtnSemiAutoDebounceTime) > debounceDelay) {
+    if (reading != btnSemiAutoState) {
+      btnSemiAutoState = reading;
+
+      if (btnSemiAutoState == HIGH) {
+        isSemiAuto = !isSemiAuto && (waterLevel < 3 && waterLevel > 1);
+      }
+    }
+  }
+  lastSemiAutoState = reading;
 }
 
 void handleSemiAutoLed() {
-  
-  bool isSemiAutoLedOn = isSemiAuto && waterLevel == 2;
-  digitalWrite(ledSemiAuto, isSemiAutoLedOn);
+  digitalWrite(ledSemiAuto, isSemiAuto);
 }
