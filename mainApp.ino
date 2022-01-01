@@ -28,6 +28,8 @@ const int ledManual = 10;
 const int ledPause = 13;
 const int ledSemiAuto = A0;
 
+const int waterMotor = A2;
+
 bool isPaused = false;
 bool isAuto = true;
 bool isSemiAuto = false;
@@ -38,7 +40,10 @@ long ledBlinkingTimeInMilliSeconds = 200;
 long lastPauseLedChangedTime = 0;
 
 //Water Level 0 = Empty, 1 = LOW, 2 = MEDIUM, 3 = HIGH
-int waterLevel = 0;
+int waterLevel = -1;
+int lastWaterLevel = -1; 
+
+bool runWaterMotor = false;
 
 void setup() {
   
@@ -59,12 +64,15 @@ void setup() {
   pinMode(waterLevelSensorHigh, INPUT);
   pinMode(waterLevelSensorMedium, INPUT);
   pinMode(waterLevelSensorLow, INPUT);
+  
+  pinMode(waterMotor, OUTPUT);
 }
 
 void loop() {
   
   updateWaterLevel();
   updateButtonStatuses();
+  handleWaterMotor();
 }
 
 void updateWaterLevel() {
@@ -78,16 +86,29 @@ void setWaterLevel() {
   int medium = digitalRead(waterLevelSensorMedium);
   int high = digitalRead(waterLevelSensorHigh);
   
+  int calculatedWaterLevel;
+  
   if (low == LOW && medium == LOW && high == LOW) {
-  	waterLevel = 3;
+  	calculatedWaterLevel = 3;
   } else if (low == LOW && medium == LOW && high == HIGH) {
-  	waterLevel = 2;
+  	calculatedWaterLevel = 2;
   } else if (low == LOW && medium == HIGH && high == HIGH) {
-  	waterLevel = 1;
+  	calculatedWaterLevel = 1;
   } else if (low == HIGH && medium == HIGH && high == HIGH) {
-  	waterLevel = 0;
+  	calculatedWaterLevel = 0;
   } else {
-  	waterLevel = -1;
+  	calculatedWaterLevel = -1;
+  }
+  
+  if(waterLevel != calculatedWaterLevel) {
+    
+    if(lastWaterLevel == -1) {
+      lastWaterLevel = calculatedWaterLevel;
+    } else {
+      lastWaterLevel = waterLevel;
+    }
+    
+    waterLevel = calculatedWaterLevel;
   }
 }
 
@@ -160,15 +181,22 @@ void handleAutoManualLeds() {
 
 void setPauseStatus() {
   
-  int pauseButtonStatus = digitalRead(btnPause);
+  int reading = digitalRead(btnPause);
   
-  if (pauseButtonStatus == HIGH) {
-    
-    isPaused = !isPaused;
-    handleAutoManualLeds();
-    handlePauseLed();
-    delay(100);
+  if (reading != lastBtnPauseState) {
+    lastBtnPauseDebounceTime = millis();
   }
+  
+  if ((millis() - lastBtnPauseDebounceTime) > debounceDelay) {
+    if (reading != btnPauseState) {
+      btnPauseState = reading;
+
+      if (btnPauseState == HIGH) {
+        isPaused = !isPaused;
+      }
+    }
+  }
+  lastBtnPauseState = reading;
 }
 
 void handlePauseLed() {
@@ -205,7 +233,7 @@ void setSemiAutoStatus() {
       btnSemiAutoState = reading;
 
       if (btnSemiAutoState == HIGH) {
-        isSemiAuto = !isSemiAuto && (waterLevel < 3 && waterLevel > 1);
+        isSemiAuto = !isSemiAuto && (waterLevel < 3 && waterLevel > 0);
       }
     }
   }
@@ -213,5 +241,22 @@ void setSemiAutoStatus() {
 }
 
 void handleSemiAutoLed() {
-  digitalWrite(ledSemiAuto, isSemiAuto);
+  digitalWrite(ledSemiAuto, isSemiAuto && isAuto && !isPaused);
+}
+
+void handleWaterMotor() {
+  setWaterMotorRunStatus();
+  
+  digitalWrite(waterMotor, runWaterMotor);
+}
+
+void setWaterMotorRunStatus() {
+  
+  bool isWaterLevelLow = waterLevel == 0;
+  bool isWaterLevelLowToHigh = waterLevel < 3 && waterLevel > 0;
+  bool isTankFillingUp = isWaterLevelLowToHigh && waterLevel > lastWaterLevel;
+  
+  bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
+  
+  runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused;
 }
