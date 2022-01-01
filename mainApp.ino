@@ -48,6 +48,7 @@ int waterLevel = -1;
 int lastWaterLevel = -1; 
 
 bool runWaterMotor = false;
+bool isWaterMotorRunning = false;
 
 bool isSumpTankLow = false;
 
@@ -274,7 +275,23 @@ void handleSemiAutoLed() {
 void handleWaterMotor() {
   setWaterMotorRunStatus();
   
-  digitalWrite(waterMotor, runWaterMotor);
+  if(isWaterMotorRunning != runWaterMotor) {
+    
+    if(runWaterMotor) {
+      buzzerBeep();
+      buzzerBeep();
+      buzzerBeep();
+    }
+    
+    digitalWrite(waterMotor, runWaterMotor);
+    isWaterMotorRunning = runWaterMotor;
+    
+    if(!runWaterMotor) {
+      buzzerBeep();
+      buzzerBeep();
+      buzzerBeep();
+    }
+  }
 }
 
 void setWaterMotorRunStatus() {
@@ -287,11 +304,6 @@ void setWaterMotorRunStatus() {
   
   bool lastRunWaterMotor = runWaterMotor;
   runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused && !isSumpTankLow;
-  
-  if(lastRunWaterMotor != runWaterMotor) {
-    buzzerBeep();
-    buzzerBeep();
-  }
 }
 
 void buzzerBeep() {
