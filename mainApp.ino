@@ -37,16 +37,20 @@ const int ledSumpTankLow = A5;
 const int ledRunning = 12;
 const int ledStandby = 11;
 
+const int ledTimer = A1;
+
 bool isPaused = false;
 bool isAuto = true;
 bool isSemiAuto = false;
 
 bool isPauseLedOn = false;
 bool isRunningLedOn = false;
+bool isTimerLedOn = false;
 
-long ledBlinkingTimeInMilliSeconds = 200;
+const long ledBlinkingTimeInMilliSeconds = 200;
 long lastPauseLedChangedTime = 0;
 long lastRunningLedChangedTime = 0;
+long lastTimerLedChangedTime = 0;
 
 //Water Level 0 = Empty, 1 = LOW, 2 = MEDIUM, 3 = HIGH
 int waterLevel = -1;
@@ -56,6 +60,10 @@ bool runWaterMotor = false;
 bool isWaterMotorRunning = false;
 
 bool isSumpTankLow = false;
+
+long motorStarTime = 0;
+//5 minutes
+const long motorMaxRunTimeInMilliseconds = 300000;
 
 void setup() {
   
@@ -85,6 +93,8 @@ void setup() {
   
   pinMode(ledRunning, OUTPUT);
   pinMode(ledStandby, OUTPUT);
+  
+  pinMode(ledTimer, OUTPUT);
   
   buzzerBeep();
   buzzerBeep();
@@ -287,6 +297,8 @@ void handleWaterMotor() {
       buzzerBeep();
       buzzerBeep();
       buzzerBeep();
+      
+      motorStarTime = millis();
     }
     
     digitalWrite(waterMotor, runWaterMotor);
@@ -296,11 +308,14 @@ void handleWaterMotor() {
       buzzerBeep();
       buzzerBeep();
       buzzerBeep();
+      
+      motorStarTime = 0;
     }
   }
   
   handleRunningLed();
   handleSandbyLed();
+  handleTimerLed();
 }
 
 void setWaterMotorRunStatus() {
@@ -308,11 +323,11 @@ void setWaterMotorRunStatus() {
   bool isWaterLevelLow = waterLevel == 0;
   bool isWaterLevelLowToHigh = waterLevel < 3 && waterLevel > 0;
   bool isTankFillingUp = isWaterLevelLowToHigh && waterLevel > lastWaterLevel;
-  
   bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
+  bool isTimerUp = isAuto && (millis() - motorStarTime) >= motorMaxRunTimeInMilliseconds;
   
-  bool lastRunWaterMotor = runWaterMotor;
-  runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused && !isSumpTankLow;
+  
+  runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused && !isSumpTankLow && !isTimerUp;
 }
 
 void handleRunningLed() {
@@ -344,6 +359,24 @@ void handleSandbyLed() {
     analogWrite(ledStandby, 128+127*cos(2*PI/2500*millis()));
   } else {
     digitalWrite(ledStandby, LOW);
+  }
+}
+
+void handleTimerLed() {
+  
+  if(isWaterMotorRunning && motorStarTime > 0 && isAuto){
+    
+    long timeElapsedAfterLastChange = millis() - lastTimerLedChangedTime;
+    
+    if(timeElapsedAfterLastChange > ledBlinkingTimeInMilliSeconds) {
+      
+      isTimerLedOn = !isTimerLedOn;
+      digitalWrite(ledTimer, isTimerLedOn);
+      lastTimerLedChangedTime = millis();
+    }
+  } else {
+     digitalWrite(ledTimer, LOW);
+     isTimerLedOn = false;
   }
 }
 
