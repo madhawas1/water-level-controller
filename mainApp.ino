@@ -31,6 +31,9 @@ const int ledSemiAuto = A0;
 const int waterMotor = A2;
 const int buzzer = A3;
 
+const int sumpTankLowSensor = A4;
+const int ledSumpTankLow = A5;
+
 bool isPaused = false;
 bool isAuto = true;
 bool isSemiAuto = false;
@@ -45,6 +48,8 @@ int waterLevel = -1;
 int lastWaterLevel = -1; 
 
 bool runWaterMotor = false;
+
+bool isSumpTankLow = false;
 
 void setup() {
   
@@ -69,15 +74,26 @@ void setup() {
   pinMode(waterMotor, OUTPUT);
   pinMode(buzzer, OUTPUT);
   
+  pinMode(sumpTankLowSensor, INPUT);
+  pinMode(ledSumpTankLow, OUTPUT);
+  
   buzzerBeep();
   buzzerBeep();
 }
 
 void loop() {
   
+  updateSumpTankWaterStatus();
   updateWaterLevel();
   updateButtonStatuses();
   handleWaterMotor();
+}
+
+void updateSumpTankWaterStatus() {
+  int status = digitalRead(sumpTankLowSensor);
+  
+  isSumpTankLow = !status;
+  digitalWrite(ledSumpTankLow, isSumpTankLow);
 }
 
 void updateWaterLevel() {
@@ -270,7 +286,7 @@ void setWaterMotorRunStatus() {
   bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
   
   bool lastRunWaterMotor = runWaterMotor;
-  runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused;
+  runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused && !isSumpTankLow;
   
   if(lastRunWaterMotor != runWaterMotor) {
     buzzerBeep();
