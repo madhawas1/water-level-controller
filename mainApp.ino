@@ -34,14 +34,19 @@ const int buzzer = A3;
 const int sumpTankLowSensor = A4;
 const int ledSumpTankLow = A5;
 
+const int ledRunning = 12;
+const int ledStandby = 11;
+
 bool isPaused = false;
 bool isAuto = true;
 bool isSemiAuto = false;
 
 bool isPauseLedOn = false;
+bool isRunningLedOn = false;
 
 long ledBlinkingTimeInMilliSeconds = 200;
 long lastPauseLedChangedTime = 0;
+long lastRunningLedChangedTime = 0;
 
 //Water Level 0 = Empty, 1 = LOW, 2 = MEDIUM, 3 = HIGH
 int waterLevel = -1;
@@ -77,6 +82,9 @@ void setup() {
   
   pinMode(sumpTankLowSensor, INPUT);
   pinMode(ledSumpTankLow, OUTPUT);
+  
+  pinMode(ledRunning, OUTPUT);
+  pinMode(ledStandby, OUTPUT);
   
   buzzerBeep();
   buzzerBeep();
@@ -223,9 +231,7 @@ void setPauseStatus() {
 }
 
 void handlePauseLed() {
-  
-  long millist = millis();
-  
+    
   if(isPaused) {
     
     long timeElapsedAfterLastChange = millis() - lastPauseLedChangedTime;
@@ -292,6 +298,9 @@ void handleWaterMotor() {
       buzzerBeep();
     }
   }
+  
+  handleRunningLed();
+  handleSandbyLed();
 }
 
 void setWaterMotorRunStatus() {
@@ -304,6 +313,38 @@ void setWaterMotorRunStatus() {
   
   bool lastRunWaterMotor = runWaterMotor;
   runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused && !isSumpTankLow;
+}
+
+void handleRunningLed() {
+    
+  if(isWaterMotorRunning) {
+    
+    long timeElapsedAfterLastChange = millis() - lastRunningLedChangedTime;
+    
+    if(timeElapsedAfterLastChange > ledBlinkingTimeInMilliSeconds) {
+      
+      isRunningLedOn = !isRunningLedOn;
+      digitalWrite(ledRunning, isRunningLedOn);
+      lastRunningLedChangedTime = millis();
+    }
+  } else {
+  
+    digitalWrite(ledRunning, LOW);
+    isRunningLedOn = false;
+  } 
+
+  if(isRunningLedOn) {
+    buzzerBeep();
+  }
+}
+
+void handleSandbyLed() {
+  
+  if(!isWaterMotorRunning && (isAuto || isSemiAuto) && !isPaused) {      
+    analogWrite(ledStandby, 128+127*cos(2*PI/2500*millis()));
+  } else {
+    digitalWrite(ledStandby, LOW);
+  }
 }
 
 void buzzerBeep() {
