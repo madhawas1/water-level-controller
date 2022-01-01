@@ -29,6 +29,7 @@ const int ledPause = 13;
 const int ledSemiAuto = A0;
 
 const int waterMotor = A2;
+const int buzzer = A3;
 
 bool isPaused = false;
 bool isAuto = true;
@@ -66,6 +67,10 @@ void setup() {
   pinMode(waterLevelSensorLow, INPUT);
   
   pinMode(waterMotor, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+  
+  buzzerBeep();
+  buzzerBeep();
 }
 
 void loop() {
@@ -164,6 +169,7 @@ void setAutoStatus() {
 
       if (btnAutoManualState == HIGH) {
         isAuto = !isAuto;
+        buzzerBeep();
       }
     }
   }
@@ -218,6 +224,10 @@ void handlePauseLed() {
     digitalWrite(ledPause, LOW);
     isPauseLedOn = false;
   } 
+
+  if(isPauseLedOn) {
+    buzzerBeep();
+  }
 }
 
 void setSemiAutoStatus() {
@@ -234,6 +244,7 @@ void setSemiAutoStatus() {
 
       if (btnSemiAutoState == HIGH) {
         isSemiAuto = !isSemiAuto && (waterLevel < 3 && waterLevel > 0);
+        buzzerBeep();
       }
     }
   }
@@ -258,5 +269,20 @@ void setWaterMotorRunStatus() {
   
   bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
   
+  bool lastRunWaterMotor = runWaterMotor;
   runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused;
+  
+  if(lastRunWaterMotor != runWaterMotor) {
+    buzzerBeep();
+    buzzerBeep();
+  }
+}
+
+void buzzerBeep() {
+  const int buzzerTime = 250;
+  
+  digitalWrite(buzzer, HIGH);
+  delay(buzzerTime);
+  digitalWrite(buzzer, LOW);
+  delay(buzzerTime);
 }
