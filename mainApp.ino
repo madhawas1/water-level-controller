@@ -282,6 +282,10 @@ void setSemiAutoStatus() {
     }
   }
   lastSemiAutoState = reading;
+  
+  if (waterLevel == 3) {
+    isSemiAuto = false;
+  }
 }
 
 void handleSemiAutoLed() {
