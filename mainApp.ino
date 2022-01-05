@@ -324,10 +324,11 @@ void setWaterMotorRunStatus() {
   bool isWaterLevelLowToHigh = waterLevel < 3 && waterLevel > 0;
   bool isTankFillingUp = isWaterLevelLowToHigh && waterLevel > lastWaterLevel;
   bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
+  bool runMotorSemiAutoMode = isSemiAuto && (isWaterLevelLowToHigh || isTankFillingUp);
   bool isTimerUp = isAuto && (millis() - motorStarTime) >= motorMaxRunTimeInMilliseconds;
   
   
-  runWaterMotor = (runMotorAutoMode || isSemiAuto || !isAuto) && !isPaused && !isSumpTankLow && !isTimerUp;
+  runWaterMotor = (runMotorAutoMode || runMotorSemiAutoMode || !isAuto) && !isPaused && !isSumpTankLow && !isTimerUp;
 }
 
 void handleRunningLed() {
