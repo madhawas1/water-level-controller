@@ -36,6 +36,8 @@ const int ledSumpTankLow = A5;
 
 const int ledRunning = 12;
 const int ledStandby = 11;
+int standbyLedBrightness = 0;
+int standbyLedFadeAmount = 2;
 
 const int ledTimer = A1;
 
@@ -361,7 +363,16 @@ void handleRunningLed() {
 void handleSandbyLed() {
   
   if(!isWaterMotorRunning && (isAuto || isSemiAuto) && !isPaused) {      
-    analogWrite(ledStandby, 128+127*cos(2*PI/2500*millis()));
+  	
+    analogWrite(ledStandby, standbyLedBrightness);
+  	standbyLedBrightness = standbyLedBrightness + standbyLedFadeAmount;
+
+  	if (standbyLedBrightness <= 0 || standbyLedBrightness >= 255) {
+    	standbyLedFadeAmount = -standbyLedFadeAmount;
+  	}
+    
+  	delay(30);
+    
   } else {
     digitalWrite(ledStandby, LOW);
   }
