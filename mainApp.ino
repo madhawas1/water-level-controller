@@ -108,6 +108,13 @@ void setup() {
 
 void readFromEEPROM() {
   
+  bool isEEPROMUpdated;
+  EEPROM.get(EEPROM.length() - 1, isEEPROMUpdated);
+  
+  if (!isEEPROMUpdated){
+    return;
+  }
+  
   int eeAddress = 0;
   
   EEPROM.get(eeAddress, isPaused);
@@ -460,4 +467,6 @@ void updateEEPROM() {
   
   EEPROM.update(eeAddress, motorStarTime);
   eeAddress += sizeof(long);
+  
+  EEPROM.update(EEPROM.length() - 1, true);
 }
