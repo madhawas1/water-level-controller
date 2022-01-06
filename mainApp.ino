@@ -1,3 +1,5 @@
+#include <EEPROM.h>
+
 const unsigned long debounceDelay = 50;
 
 const int waterLevelSensorLow = 0;
@@ -98,8 +100,36 @@ void setup() {
   
   pinMode(ledTimer, OUTPUT);
   
+  readFromEEPROM();
+  
   buzzerBeep();
   buzzerBeep();
+}
+
+void readFromEEPROM() {
+  
+  int eeAddress = 0;
+  
+  EEPROM.get(eeAddress, isPaused);
+  eeAddress += sizeof(bool);
+    
+  EEPROM.get(eeAddress, isAuto);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.get(eeAddress, isSemiAuto);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.get(eeAddress, lastWaterLevel);
+  eeAddress += sizeof(int);
+  
+  EEPROM.get(eeAddress, runWaterMotor);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.get(eeAddress, isWaterMotorRunning);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.get(eeAddress, motorStarTime);
+  eeAddress += sizeof(long);
 }
 
 void loop() {
@@ -108,6 +138,7 @@ void loop() {
   updateWaterLevel();
   updateButtonStatuses();
   handleWaterMotor();
+  updateEEPROM();
 }
 
 void updateSumpTankWaterStatus() {
@@ -403,4 +434,30 @@ void buzzerBeep() {
   delay(buzzerTime);
   digitalWrite(buzzer, LOW);
   delay(buzzerTime);
+}
+
+void updateEEPROM() {
+  
+  int eeAddress = 0;
+  
+  EEPROM.update(eeAddress, isPaused);
+  eeAddress += sizeof(bool);
+    
+  EEPROM.update(eeAddress, isAuto);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.update(eeAddress, isSemiAuto);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.update(eeAddress, lastWaterLevel);
+  eeAddress += sizeof(int);
+  
+  EEPROM.update(eeAddress, runWaterMotor);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.update(eeAddress, isWaterMotorRunning);
+  eeAddress += sizeof(bool);
+  
+  EEPROM.update(eeAddress, motorStarTime);
+  eeAddress += sizeof(long);
 }
