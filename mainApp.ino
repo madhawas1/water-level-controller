@@ -100,7 +100,7 @@ void setup() {
   
   pinMode(ledTimer, OUTPUT);
   
-  readFromEEPROM();
+  //readFromEEPROM();
   
   buzzerBeep();
   buzzerBeep();
@@ -145,7 +145,7 @@ void loop() {
   updateWaterLevel();
   updateButtonStatuses();
   handleWaterMotor();
-  updateEEPROM();
+  //updateEEPROM();
 }
 
 void updateSumpTankWaterStatus() {
@@ -365,6 +365,7 @@ void handleWaterMotor() {
 void setWaterMotorRunStatus() {
   
   bool isWaterLevelLow = waterLevel == 0;
+  bool isWaterLevelHigh = waterLevel == 3;
   bool isWaterLevelLowToHigh = waterLevel < 3 && waterLevel > 0;
   bool isTankFillingUp = isWaterLevelLowToHigh && waterLevel > lastWaterLevel;
   bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
@@ -372,7 +373,7 @@ void setWaterMotorRunStatus() {
   bool isTimerUp = isAuto && (millis() - motorStarTime) >= motorMaxRunTimeInMilliseconds;
   
   
-  runWaterMotor = (runMotorAutoMode || runMotorSemiAutoMode || !isAuto) && !isPaused && !isSumpTankLow && !isTimerUp;
+  runWaterMotor = (runMotorAutoMode || runMotorSemiAutoMode || !(isAuto || isWaterLevelHigh)) && !isPaused && !isSumpTankLow && !isTimerUp;
 }
 
 void handleRunningLed() {
