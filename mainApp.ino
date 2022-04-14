@@ -49,6 +49,9 @@ bool isSemiAuto = false;
 
 bool isPauseLedOn = false;
 bool isRunningLedOn = false;
+
+//Timer Status 0 = OFF, 1 = ON, 2 = TIMER UP
+int timerStatus = 0;
 bool isTimerLedOn = false;
 
 const long ledBlinkingTimeInMilliSeconds = 200;
@@ -66,7 +69,7 @@ bool isWaterMotorRunning = false;
 bool isSumpTankLow = false;
 
 long motorStarTime = 0;
-//5 minutes
+//5 minutes = 300000 milliseconds
 const long motorMaxRunTimeInMilliseconds = 300000;
 
 void setup() {
@@ -343,6 +346,7 @@ void handleWaterMotor() {
       buzzerBeep();
       
       motorStarTime = millis();
+      timerStatus = 1; //Turn on TIMER
     }
     
     digitalWrite(waterMotor, runWaterMotor);
@@ -354,6 +358,10 @@ void handleWaterMotor() {
       buzzerBeep();
       
       motorStarTime = 0;
+      
+      if(timerStatus != 2) {
+        timerStatus = 0; //If TIMER is not up turn it OFF
+      }
     }
   }
   
@@ -368,12 +376,19 @@ void setWaterMotorRunStatus() {
   bool isWaterLevelHigh = waterLevel == 3;
   bool isWaterLevelLowToHigh = waterLevel < 3 && waterLevel > 0;
   bool isTankFillingUp = isWaterLevelLowToHigh && waterLevel > lastWaterLevel;
-  bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp);
-  bool runMotorSemiAutoMode = isSemiAuto && (isWaterLevelLowToHigh || isTankFillingUp);
-  bool isTimerUp = isAuto && (millis() - motorStarTime) >= motorMaxRunTimeInMilliseconds;
+  bool runMotorAutoMode = isAuto && (isWaterLevelLow || isTankFillingUp) && timerStatus != 2;
+  bool runMotorSemiAutoMode = isSemiAuto && (isWaterLevelLowToHigh || isTankFillingUp) && timerStatus != 2;
+  bool runMotorManualMode = !isAuto && !isWaterLevelHigh;
   
+  bool isTimerUp = isAuto && (timerStatus == 1) && (millis() - motorStarTime) >= motorMaxRunTimeInMilliseconds;
   
-  runWaterMotor = (runMotorAutoMode || runMotorSemiAutoMode || !(isAuto || isWaterLevelHigh)) && !isPaused && !isSumpTankLow && !isTimerUp;
+  if(isTimerUp) {
+    timerStatus = 2; //Set as TIMER UP
+  } else if (timerStatus == 2 && !isWaterLevelLow) {
+    timerStatus = 0; //Turn off TIMER
+  }
+  
+  runWaterMotor = (runMotorAutoMode || runMotorSemiAutoMode || runMotorManualMode) && !isPaused && !isSumpTankLow;
 }
 
 void handleRunningLed() {
